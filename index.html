@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project SETU — 3D Concept Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{ --cream:#F7F4ED; --ink:#1B1A17; --accent:#B45A12; --muted:#6F6A5E; --hairline:#DDD6C4; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden;background:var(--cream);font-family:'Inter',system-ui,sans-serif;color:var(--ink)}
+  #stage{position:fixed;inset:0}
+  #stage canvas{display:block}
+
+  .wordmark{position:fixed;top:22px;left:26px;z-index:10;pointer-events:none}
+  .wordmark h1{font-family:'Archivo',sans-serif;font-weight:800;font-size:15px;letter-spacing:-.5px}
+  .wordmark p{font-size:10px;letter-spacing:3px;color:var(--muted);font-weight:600;margin-top:5px;text-transform:uppercase}
+
+  .hint{position:fixed;top:24px;right:26px;z-index:10;pointer-events:none;
+    font-size:10px;letter-spacing:2px;color:var(--muted);font-weight:600;text-transform:uppercase;text-align:right;line-height:1.9}
+
+  /* part labels */
+  #labels{position:fixed;inset:0;z-index:5;pointer-events:none;overflow:hidden}
+  .tag{position:absolute;transform:translate(-50%,-130%);white-space:nowrap;
+    background:rgba(247,244,237,.94);border:1px solid var(--hairline);border-radius:999px;
+    padding:5px 12px 5px 9px;font-size:10px;font-weight:600;letter-spacing:1.6px;
+    box-shadow:0 6px 18px -8px rgba(27,26,23,.3);opacity:0;transition:opacity .35s}
+  .tag.on{opacity:1}
+  .tag i{display:inline-block;width:7px;height:7px;border-radius:99px;background:var(--accent);margin-right:7px;vertical-align:1px}
+
+  /* control bar */
+  #bar{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:10;
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;
+    background:rgba(247,244,237,.9);border:1px solid var(--hairline);border-radius:999px;
+    padding:10px 12px;box-shadow:0 14px 34px -14px rgba(27,26,23,.28);backdrop-filter:blur(6px);
+    max-width:94vw}
+  .seg{display:flex;background:rgba(27,26,23,.05);border-radius:999px;padding:3px}
+  .btn{border:0;background:transparent;cursor:pointer;border-radius:999px;
+    padding:8px 16px;font-family:'Inter',sans-serif;font-size:10px;font-weight:600;letter-spacing:2px;color:var(--muted)}
+  .btn.on{background:var(--ink);color:var(--cream)}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .div{width:1px;height:22px;background:var(--hairline)}
+  .sld{display:flex;align-items:center;gap:8px;padding:0 6px}
+  .sld span{font-size:10px;letter-spacing:2px;color:var(--muted);font-weight:600}
+  input[type=range]{-webkit-appearance:none;width:110px;height:2px;background:var(--hairline);border-radius:2px;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:99px;background:var(--accent);cursor:pointer;border:2px solid var(--cream);box-shadow:0 0 0 1px var(--accent)}
+  input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:99px;background:var(--accent);cursor:pointer;border:2px solid var(--cream)}
+  #spin.on{background:var(--ink);color:var(--cream)}
+  @media (max-width:640px){ .hint{display:none} .sld span{display:none} input[type=range]{width:70px} }
+</style>
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="stage" aria-label="Interactive 3D model of the Project SETU concept car. Drag to rotate, scroll to zoom."></div>
+
+<div class="wordmark">
+  <h1>PROJECT SETU</h1>
+  <p>3D concept · tall-boy MPV</p>
+</div>
+<div class="hint">drag — rotate<br>scroll — zoom<br>right-drag — pan</div>
+<div id="labels"></div>
+
+<div id="bar" role="toolbar" aria-label="Model view controls">
+  <div class="seg" role="group" aria-label="View mode">
+    <button class="btn on" id="mExt" aria-pressed="true">Exterior</button>
+    <button class="btn" id="mXray" aria-pressed="false">X-Ray</button>
+    <button class="btn" id="mExp" aria-pressed="false">Exploded</button>
+  </div>
+  <div class="div"></div>
+  <label class="sld"><span>EXPLODE</span><input type="range" id="explode" min="0" max="100" value="0" aria-label="Explode amount"></label>
+  <div class="div"></div>
+  <button class="btn on" id="spin" aria-pressed="true" title="Auto-rotate">&#10227;</button>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ---------- renderer / scene ---------- */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xF7F4ED);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.1, 100);
+camera.position.set(6.4, 3.4, 7.2);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 1.0, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.minDistance = 4.2;
+controls.maxDistance = 16;
+controls.maxPolarAngle = 1.62;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 1.1;
+
+/* ---------- lights ---------- */
+scene.add(new THREE.HemisphereLight(0xfff8ec, 0xd8cfb8, 0.85));
+const sun = new THREE.DirectionalLight(0xffffff, 1.7);
+sun.position.set(6, 9, 4);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -6; sun.shadow.camera.right = 6;
+sun.shadow.camera.top = 7;  sun.shadow.camera.bottom = -3;
+sun.shadow.camera.far = 30; sun.shadow.bias = -0.0004;
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0xfff2df, 0.45);
+fill.position.set(-6, 3, -6);
+scene.add(fill);
+
+const ground = new THREE.Mesh(
+  new THREE.CircleGeometry(11, 48),
+  new THREE.ShadowMaterial({ opacity: 0.16 })
+);
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+/* ---------- materials ---------- */
+const M = {
+  ink:    new THREE.MeshStandardMaterial({ color:0x1B1A17, roughness:0.5,  metalness:0.3 }),
+  glass:  new THREE.MeshPhysicalMaterial({ color:0xD8E4E0, roughness:0.08, metalness:0.05, transparent:true, opacity:0.38 }),
+  accent: new THREE.MeshStandardMaterial({ color:0xB45A12, roughness:0.45, metalness:0.25 }),
+  accentD:new THREE.MeshStandardMaterial({ color:0x8A430E, roughness:0.55, metalness:0.2 }),
+  cream:  new THREE.MeshStandardMaterial({ color:0xF1EBDC, roughness:0.4,  metalness:0.35 }),
+  seat:   new THREE.MeshStandardMaterial({ color:0x35322E, roughness:0.92, metalness:0.02 }),
+  dark:   new THREE.MeshStandardMaterial({ color:0x24211E, roughness:0.7,  metalness:0.3 }),
+  tyre:   new THREE.MeshStandardMaterial({ color:0x171512, roughness:0.9,  metalness:0.05 }),
+  case:   new THREE.MeshStandardMaterial({ color:0x6F6A5E, roughness:0.8,  metalness:0.1 }),
+  lampW:  new THREE.MeshStandardMaterial({ color:0xFFF6E0, emissive:0xFFEDBE, emissiveIntensity:0.7 }),
+  lampR:  new THREE.MeshStandardMaterial({ color:0xB45A12, emissive:0xB45A12, emissiveIntensity:0.55 }),
+};
+const shadowed = m => { m.castShadow = true; m.receiveShadow = true; return m; };
+
+/* ---------- groups (explode layers) ---------- */
+const roofG = new THREE.Group(), glassG = new THREE.Group(), bodyG = new THREE.Group(),
+      seatsG = new THREE.Group(), powerG = new THREE.Group(), chassisG = new THREE.Group(),
+      wheelsG = new THREE.Group();
+scene.add(roofG, glassG, bodyG, seatsG, powerG, chassisG, wheelsG);
+
+/* ---------- lower body shell (side profile extruded) ---------- */
+function bodyProfile(){
+  const s = new THREE.Shape();
+  s.moveTo(-2.00, 0.38);
+  s.lineTo(-2.00, 0.95);
+  s.quadraticCurveTo(-2.00, 1.06, -1.88, 1.08);
+  s.lineTo(1.55, 1.08);
+  s.quadraticCurveTo(1.85, 1.06, 1.98, 0.92);
+  s.quadraticCurveTo(2.06, 0.82, 2.04, 0.66);
+  s.lineTo(2.02, 0.45);
+  s.quadraticCurveTo(2.00, 0.38, 1.92, 0.38);
+  s.lineTo(1.74, 0.38);
+  s.absarc(1.30, 0.38, 0.44, 0, Math.PI, false);   // front wheel arch
+  s.lineTo(-0.81, 0.38);
+  s.absarc(-1.25, 0.38, 0.44, 0, Math.PI, false);  // rear wheel arch
+  s.lineTo(-2.00, 0.38);
+  return s;
+}
+{
+  const g = new THREE.ExtrudeGeometry(bodyProfile(), { depth:1.62, bevelEnabled:true, bevelThickness:0.05, bevelSize:0.05, bevelSegments:2, curveSegments:24 });
+  g.translate(0, 0, -0.81);
+  bodyG.add(shadowed(new THREE.Mesh(g, M.ink)));
+}
+/* side accent blades + handles + lights */
+for(const sz of [-1, 1]){
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.05, 0.02), M.accent);
+  blade.position.set(-0.15, 0.94, sz*0.868); bodyG.add(blade);
+  const belt = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.035, 0.02), M.accent);
+  belt.position.set(-0.2, 1.10, sz*0.862); bodyG.add(belt);
+  for(const hx of [0.45, -0.45]){
+    const h = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.03, 0.02), M.cream);
+    h.position.set(hx, 1.00, sz*0.868); bodyG.add(h);
+  }
+  const mir = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.07, 0.14), M.ink);
+  mir.position.set(1.02, 1.28, sz*0.92); bodyG.add(shadowed(mir));
+  const hl = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.11, 0.30), M.lampW);
+  hl.position.set(2.065, 0.86, sz*0.52); bodyG.add(hl);
+  const tl = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, 0.24), M.lampR);
+  tl.position.set(-2.045, 0.88, sz*0.55); bodyG.add(tl);
+}
+
+/* ---------- glasshouse ---------- */
+function glassProfile(){
+  const s = new THREE.Shape();
+  s.moveTo(-1.72, 1.02);
+  s.lineTo(-1.62, 1.62);
+  s.quadraticCurveTo(-1.58, 1.70, -1.48, 1.70);
+  s.lineTo(0.72, 1.70);
+  s.quadraticCurveTo(0.82, 1.70, 0.88, 1.60);
+  s.lineTo(1.28, 1.06);
+  s.quadraticCurveTo(1.30, 1.02, 1.24, 1.02);
+  s.lineTo(-1.72, 1.02);
+  return s;
+}
+{
+  const g = new THREE.ExtrudeGeometry(glassProfile(), { depth:1.46, bevelEnabled:true, bevelThickness:0.04, bevelSize:0.04, bevelSegments:2, curveSegments:20 });
+  g.translate(0, 0, -0.73);
+  const mesh = new THREE.Mesh(g, M.glass);
+  mesh.castShadow = true;
+  glassG.add(mesh);
+}
+/* pillars */
+function pillar(x1, y1, x2, y2, w){
+  for(const sz of [-1, 1]){
+    const len = Math.hypot(x2-x1, y2-y1);
+    const p = new THREE.Mesh(new THREE.BoxGeometry(w, len, 0.07), M.ink);
+    p.position.set((x1+x2)/2, (y1+y2)/2, sz*0.755);
+    p.rotation.z = -Math.atan2(x2-x1, y2-y1); // align box Y-axis along the segment
+    glassG.add(shadowed(p));
+  }
+}
+pillar(0.98, 1.04, 0.80, 1.70, 0.10);   // A
+pillar(0.05, 1.04, 0.05, 1.70, 0.09);   // B
+pillar(-1.32, 1.04, -1.52, 1.70, 0.11); // C
+pillar(-1.70, 1.04, -1.66, 1.66, 0.10);  // D
+
+/* ---------- roof ---------- */
+{
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(2.52, 0.09, 1.60), M.ink);
+  roof.position.set(-0.38, 1.745, 0); roofG.add(shadowed(roof));
+  for(const sz of [-1, 1]){
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.045, 0.07), M.ink);
+    rail.position.set(-0.38, 1.815, sz*0.52); roofG.add(shadowed(rail));
+  }
+  const fin = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.09, 0.06), M.accent);
+  fin.position.set(-1.45, 1.83, 0); roofG.add(fin);
+}
+
+/* ---------- wheels ---------- */
+function makeWheel(){
+  const w = new THREE.Group();
+  const tyre = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.24, 36), M.tyre);
+  tyre.rotation.x = Math.PI/2; w.add(shadowed(tyre));
+  const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.205, 0.205, 0.25, 28), M.cream);
+  rim.rotation.x = Math.PI/2; w.add(rim);
+  for(const sz of [-1, 1]) for(let i=0;i<5;i++){
+    const sp = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.34, 0.02), M.ink);
+    sp.position.z = sz*0.118; sp.rotation.z = i*Math.PI*2/5; w.add(sp);
+  }
+  for(const sz of [-1, 1]){
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.03, 20), M.accent);
+    hub.rotation.x = Math.PI/2; hub.position.z = sz*0.12; w.add(hub);
+  }
+  return w;
+}
+const wheelBase = [];
+for(const [wx, wz] of [[1.30,0.80],[1.30,-0.80],[-1.25,0.80],[-1.25,-0.80]]){
+  const w = makeWheel();
+  w.position.set(wx, 0.34, wz);
+  w.userData.base = new THREE.Vector3(wx, 0.34, wz);
+  w.userData.side = Math.sign(wz);
+  wheelsG.add(w); wheelBase.push(w);
+}
+
+/* ---------- chassis + floor ---------- */
+{
+  for(const sz of [-1, 1]){
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.10, 0.10), M.dark);
+    rail.position.set(0, 0.42, sz*0.55); chassisG.add(shadowed(rail));
+  }
+  for(const cx of [-1.2, 0, 1.2]){
+    const cross = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.08, 1.20), M.dark);
+    cross.position.set(cx, 0.42, 0); chassisG.add(cross);
+  }
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(3.30, 0.07, 1.55), M.dark);
+  floor.position.set(0, 0.60, 0); chassisG.add(shadowed(floor));
+}
+
+/* ---------- swappable power unit ---------- */
+{
+  const unit = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.30, 1.05), M.accent);
+  unit.position.set(0, 0.38, 0); powerG.add(shadowed(unit));
+  const lid = new THREE.Mesh(new THREE.BoxGeometry(1.19, 0.06, 1.09), M.accentD);
+  lid.position.set(0, 0.55, 0); powerG.add(shadowed(lid));
+  for(const [bx, bz] of [[-0.5,-0.45],[0.5,-0.45],[-0.5,0.45],[0.5,0.45]]){
+    const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.05, 12), M.ink);
+    bolt.position.set(bx, 0.585, bz); powerG.add(bolt);
+  }
+  const port = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 0.30), M.ink);
+  port.position.set(0.66, 0.38, 0); powerG.add(port);
+}
+
+/* ---------- interior : seats, dash, steering, luggage ---------- */
+function makeSeat(){
+  const g = new THREE.Group();
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.10, 0.50), M.seat);
+  base.position.y = 0.05; g.add(shadowed(base));
+  const back = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.55, 0.50), M.seat);
+  back.position.set(-0.25, 0.36, 0); back.rotation.z = 0.10; g.add(shadowed(back));
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.14, 0.24), M.seat);
+  head.position.set(-0.29, 0.68, 0); g.add(shadowed(head));
+  const stitch = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.015, 0.06), M.accent);
+  stitch.position.set(0, 0.105, 0); g.add(stitch);
+  return g;
+}
+for(const rx of [0.85, 0.05, -0.75]) for(const sz of [-1, 1]){
+  const s = makeSeat(); s.position.set(rx, 0.64, sz*0.40); seatsG.add(s);
+}
+{
+  const dash = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.17, 1.50), M.dark);
+  dash.position.set(1.56, 1.00, 0); seatsG.add(shadowed(dash));
+  const col = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.30, 10), M.dark);
+  col.position.set(1.38, 0.95, -0.40); col.rotation.z = 1.1; seatsG.add(col);
+  const sw = new THREE.Mesh(new THREE.TorusGeometry(0.155, 0.028, 12, 32), M.dark);
+  sw.position.set(1.30, 1.03, -0.40); sw.rotation.y = Math.PI/2 - 0.35; seatsG.add(shadowed(sw));
+  for(const sz of [-1, 1]){
+    const bag = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.34, 0.58), M.case);
+    bag.position.set(-1.52, 0.82, sz*0.33); seatsG.add(shadowed(bag));
+  }
+}
+
+/* ---------- explode rig ---------- */
+const layers = [
+  { g: roofG,    dy: 2.65 },
+  { g: glassG,   dy: 2.15 },
+  { g: bodyG,    dy: 1.60 },
+  { g: seatsG,   dy: 0.45 },
+  { g: chassisG, dy: 0.00 },
+  { g: powerG,   dy: -0.22 },
+];
+let explodeTarget = 0, explodeCur = 0;
+function applyExplode(t){
+  for(const l of layers) l.g.position.y = l.dy * t;
+  for(const w of wheelBase) w.position.z = w.userData.base.z + w.userData.side * 0.55 * t;
+}
+
+/* ---------- x-ray ---------- */
+const xraySet = [
+  { m: M.ink,   op: 0.13 },
+  { m: M.glass, op: 0.07 },
+];
+let xray = false;
+function setXray(on){
+  xray = on;
+  for(const {m, op} of xraySet){
+    m.transparent = true;
+    m.opacity = on ? op : (m === M.glass ? 0.38 : 1);
+    m.depthWrite = !on;
+    if(!on && m !== M.glass) m.transparent = false;
+  }
+  M.ink.needsUpdate = true; M.glass.needsUpdate = true;
+}
+
+/* ---------- labels ---------- */
+const labelDefs = [
+  { text:'SWAPPABLE POWER UNIT', parent: powerG,   pos:[0, 0.75, 0] },
+  { text:'6 SEATS · 2 + 2 + 2',  parent: seatsG,   pos:[0.05, 1.65, 0.4] },
+  { text:'400–450 L BOOT',       parent: seatsG,   pos:[-1.52, 1.25, 0] },
+  { text:'SKATE CHASSIS',        parent: chassisG, pos:[1.55, 0.30, 0.55] },
+];
+const labelBox = document.getElementById('labels');
+const labels = labelDefs.map(d => {
+  const a = new THREE.Object3D(); a.position.set(...d.pos); d.parent.add(a);
+  const el = document.createElement('div');
+  el.className = 'tag'; el.innerHTML = `<i></i>${d.text}`;
+  labelBox.appendChild(el);
+  return { a, el };
+});
+const _v = new THREE.Vector3();
+function updateLabels(show){
+  for(const {a, el} of labels){
+    if(!show){ el.classList.remove('on'); continue; }
+    a.getWorldPosition(_v); _v.project(camera);
+    if(_v.z > 1){ el.classList.remove('on'); continue; }
+    el.style.left = ((_v.x*0.5+0.5)*innerWidth) + 'px';
+    el.style.top  = ((-_v.y*0.5+0.5)*innerHeight) + 'px';
+    el.classList.add('on');
+  }
+}
+
+/* ---------- controls ---------- */
+const btns = { ext: document.getElementById('mExt'), xray: document.getElementById('mXray'), exp: document.getElementById('mExp') };
+const slider = document.getElementById('explode');
+const spinBtn = document.getElementById('spin');
+let mode = 'ext';
+function setActive(){
+  for(const [k, b] of Object.entries(btns)){
+    const on = (k==='ext'&&mode==='ext')||(k==='xray'&&mode==='xray')||(k==='exp'&&mode==='exp');
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+  }
+}
+function setMode(m){
+  mode = m; setActive();
+  if(m === 'ext'){ explodeTarget = 0; setXray(false); }
+  if(m === 'xray'){ explodeTarget = 0; setXray(true); }
+  if(m === 'exp'){ explodeTarget = 1; setXray(false); }
+  slider.value = explodeTarget * 100;
+}
+btns.ext.onclick  = () => setMode('ext');
+btns.xray.onclick = () => setMode('xray');
+btns.exp.onclick  = () => setMode('exp');
+slider.addEventListener('input', () => {
+  explodeTarget = slider.value / 100;
+  mode = 'custom'; setActive();
+  setXray(false);
+});
+spinBtn.onclick = () => {
+  controls.autoRotate = !controls.autoRotate;
+  spinBtn.classList.toggle('on', controls.autoRotate);
+  spinBtn.setAttribute('aria-pressed', controls.autoRotate);
+};
+renderer.domElement.addEventListener('pointerdown', () => {
+  if(controls.autoRotate){ controls.autoRotate = false; spinBtn.classList.remove('on'); spinBtn.setAttribute('aria-pressed','false'); }
+}, { once:false });
+
+/* ---------- loop ---------- */
+addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(reduceMotion){ controls.autoRotate = false; spinBtn.classList.remove('on'); }
+
+(function tick(){
+  requestAnimationFrame(tick);
+  explodeCur += (explodeTarget - explodeCur) * 0.085;
+  if(Math.abs(explodeTarget - explodeCur) < 0.0005) explodeCur = explodeTarget;
+  applyExplode(explodeCur);
+  controls.update();
+  updateLabels(mode !== 'ext' || explodeCur > 0.03);
+  renderer.render(scene, camera);
+})();
+</script>
+</body>
+</html>
