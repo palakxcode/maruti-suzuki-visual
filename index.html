@@ -1,444 +1,510 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Project SETU — 3D Concept Model</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project SETU Explorer</title>
 <style>
-  :root{ --cream:#F7F4ED; --ink:#1B1A17; --accent:#B45A12; --muted:#6F6A5E; --hairline:#DDD6C4; }
-  *{margin:0;padding:0;box-sizing:border-box}
-  html,body{height:100%;overflow:hidden;background:var(--cream);font-family:'Inter',system-ui,sans-serif;color:var(--ink)}
-  #stage{position:fixed;inset:0}
-  #stage canvas{display:block}
+  :root{
+    --ink:#1a1a1a; --grey:#5f6368; --line:#e3e3e3; --soft:#f4f4f5; --bg:#ffffff;
+    --bev:#b85c1b; --bev-l:#fbf1e6; --hyb:#1f3a93; --hyb-l:#e8ecf8; --cng:#2e7d5b; --cng-l:#e6f2ec;
+    --base:#8a8a8a; --band:#161d6f; --red:#c62828;
+  }
+  *{box-sizing:border-box}
+  html,body{overflow-x:hidden}
+  .grid>*{min-width:0}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Arial,Helvetica,sans-serif}
+  header{background:linear-gradient(120deg,#0f1456,#1b2a9a 60%,#2336c4);color:#fff;padding:28px 16px 30px}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 16px}
+  header .tag{font-size:12px;letter-spacing:.25em;text-transform:uppercase;opacity:.8;font-weight:700}
+  header h1{font-size:clamp(26px,4.2vw,42px);margin:8px 0 6px;line-height:1.15}
+  header p{margin:0;max-width:760px;opacity:.9}
+  nav{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;gap:4px;overflow-x:auto}
+  nav a{padding:12px 14px;color:var(--ink);text-decoration:none;font-weight:700;font-size:14px;white-space:nowrap;border-bottom:3px solid transparent}
+  nav a:hover{border-color:var(--bev)}
+  section{padding:36px 0;border-bottom:1px solid var(--line)}
+  h2{font-size:clamp(22px,3vw,30px);margin:0 0 4px}
+  .sub{color:var(--grey);margin:0 0 22px}
+  .cap{font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;color:var(--grey)}
+  .grid{display:grid;gap:18px}
+  .calc{grid-template-columns:320px 1fr}
+  @media (max-width:860px){.calc{grid-template-columns:1fr}}
+  .card{border:1px solid var(--line);border-radius:12px;padding:18px;background:#fff}
+  .ctl{margin-bottom:14px}
+  .ctl label{display:flex;justify-content:space-between;font-size:13px;font-weight:700}
+  .ctl label span{color:var(--bev)}
+  .ctl small{display:block;color:var(--grey);font-size:12px;margin-top:2px}
+  input[type=range]{width:100%;accent-color:var(--bev)}
+  .seg{display:flex;gap:6px;flex-wrap:wrap}
+  .seg button,.chip{border:1px solid var(--ink);background:#fff;border-radius:999px;padding:6px 12px;font:700 13px Arial;cursor:pointer;color:var(--ink)}
+  .seg button.on,.chip.on{background:var(--ink);color:#fff}
+  .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+  @media (max-width:640px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .kpi{border-radius:10px;padding:12px;background:var(--soft)}
+  .kpi b{display:block;font-size:20px}
+  .kpi em{font-style:normal;font-size:12px;font-weight:700}
+  .pos{color:var(--cng)} .neg{color:var(--red)}
+  .note{font-size:12px;color:var(--grey);margin-top:10px}
+  .insight{background:var(--bev-l);border-radius:10px;padding:12px 14px;margin-top:14px;font-weight:700}
+  svg text{font-family:Arial,Helvetica,sans-serif}
+  .dec{grid-template-columns:1fr 1fr}
+  @media (max-width:860px){.dec{grid-template-columns:1fr}}
+  .q{margin-bottom:16px}
+  .q .cap{margin-bottom:6px}
+  .result{border-radius:12px;padding:22px}
+  .result h3{margin:4px 0 8px;font-size:26px}
+  .result ul{margin:8px 0 0;padding-left:18px}
+  .path{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;font-size:13px}
+  .path span{padding:5px 10px;border-radius:999px;background:#fff;border:1px solid var(--line);font-weight:700}
+  .trims{grid-template-columns:repeat(3,1fr)}
+  @media (max-width:760px){.trims{grid-template-columns:1fr}}
+  .trim{cursor:pointer;transition:transform .15s,border-color .15s}
+  .trim:hover{transform:translateY(-2px)}
+  .trim.on{border-color:var(--ink);box-shadow:0 4px 18px rgba(0,0,0,.08)}
+  .trim h3{margin:0;font-size:13px;letter-spacing:.25em}
+  .specs{grid-template-columns:repeat(4,1fr);margin-top:18px}
+  @media (max-width:760px){.specs{grid-template-columns:repeat(2,1fr)}}
+  .spec{background:var(--soft);border-radius:10px;padding:12px}
+  .spec b{display:block;font-size:17px}
+  .road{grid-template-columns:repeat(3,1fr)}
+  @media (max-width:760px){.road{grid-template-columns:1fr}}
+  .phase{border-radius:12px;padding:16px;color:#fff}
+  .phase h3{margin:2px 0 6px;font-size:18px}
+  .gates{grid-template-columns:repeat(6,1fr);margin-top:18px}
+  @media (max-width:860px){.gates{grid-template-columns:repeat(3,1fr)}}
+  @media (max-width:520px){.gates{grid-template-columns:repeat(2,1fr)}}
+  .gate{background:var(--soft);border-radius:10px;padding:12px;cursor:pointer;border:2px solid transparent}
+  .gate.on{border-color:var(--ink);background:#fff}
+  .gate i{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;font-style:normal;font-weight:700;font-size:12px;margin-right:6px}
+  .gatebox{margin-top:12px;background:var(--hyb-l);border-radius:10px;padding:14px}
+  footer{padding:24px 0 40px;color:var(--grey);font-size:12px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--grey);margin-top:6px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 
-  .wordmark{position:fixed;top:22px;left:26px;z-index:10;pointer-events:none}
-  .wordmark h1{font-family:'Archivo',sans-serif;font-weight:800;font-size:15px;letter-spacing:-.5px}
-  .wordmark p{font-size:10px;letter-spacing:3px;color:var(--muted);font-weight:600;margin-top:5px;text-transform:uppercase}
-
-  .hint{position:fixed;top:24px;right:26px;z-index:10;pointer-events:none;
-    font-size:10px;letter-spacing:2px;color:var(--muted);font-weight:600;text-transform:uppercase;text-align:right;line-height:1.9}
-
-  /* part labels */
-  #labels{position:fixed;inset:0;z-index:5;pointer-events:none;overflow:hidden}
-  .tag{position:absolute;transform:translate(-50%,-130%);white-space:nowrap;
-    background:rgba(247,244,237,.94);border:1px solid var(--hairline);border-radius:999px;
-    padding:5px 12px 5px 9px;font-size:10px;font-weight:600;letter-spacing:1.6px;
-    box-shadow:0 6px 18px -8px rgba(27,26,23,.3);opacity:0;transition:opacity .35s}
-  .tag.on{opacity:1}
-  .tag i{display:inline-block;width:7px;height:7px;border-radius:99px;background:var(--accent);margin-right:7px;vertical-align:1px}
-
-  /* control bar */
-  #bar{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:10;
-    display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;
-    background:rgba(247,244,237,.9);border:1px solid var(--hairline);border-radius:999px;
-    padding:10px 12px;box-shadow:0 14px 34px -14px rgba(27,26,23,.28);backdrop-filter:blur(6px);
-    max-width:94vw}
-  .seg{display:flex;background:rgba(27,26,23,.05);border-radius:999px;padding:3px}
-  .btn{border:0;background:transparent;cursor:pointer;border-radius:999px;
-    padding:8px 16px;font-family:'Inter',sans-serif;font-size:10px;font-weight:600;letter-spacing:2px;color:var(--muted)}
-  .btn.on{background:var(--ink);color:var(--cream)}
-  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-  .div{width:1px;height:22px;background:var(--hairline)}
-  .sld{display:flex;align-items:center;gap:8px;padding:0 6px}
-  .sld span{font-size:10px;letter-spacing:2px;color:var(--muted);font-weight:600}
-  input[type=range]{-webkit-appearance:none;width:110px;height:2px;background:var(--hairline);border-radius:2px;outline:none}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:99px;background:var(--accent);cursor:pointer;border:2px solid var(--cream);box-shadow:0 0 0 1px var(--accent)}
-  input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:99px;background:var(--accent);cursor:pointer;border:2px solid var(--cream)}
-  #spin.on{background:var(--ink);color:var(--cream)}
-  @media (max-width:640px){ .hint{display:none} .sld span{display:none} input[type=range]{width:70px} }
+  .carwrap{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start}
+  @media (max-width:900px){.carwrap{grid-template-columns:1fr}}
+  .stage{border:1px solid var(--line);border-radius:14px;background:linear-gradient(#fbfbfd,#f1f2f6);padding:10px 10px 4px}
+  #carsvg{width:100%;height:auto;display:block}
+  #module{transition:transform .6s cubic-bezier(.4,0,.2,1)}
+  .bay{fill:none;stroke:var(--bev);stroke-width:2.5;stroke-dasharray:7 5;animation:dash 1.2s linear infinite}
+  @keyframes dash{to{stroke-dashoffset:-24}}
+  .bayglow{fill:var(--bev);opacity:.08;animation:glow 2.4s ease-in-out infinite}
+  @keyframes glow{50%{opacity:.2}}
+  .hs{cursor:pointer}
+  .hs .ring{fill:none;stroke:var(--ink);stroke-width:2;opacity:.5;transform-box:fill-box;transform-origin:center;animation:ring 2s ease-out infinite}
+  @keyframes ring{from{transform:scale(1);opacity:.55}to{transform:scale(2.1);opacity:0}}
+  .hs.on circle.dot{fill:var(--bev)}
+  .modbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+  .modbar button{border:2px solid var(--ink);background:#fff;border-radius:999px;padding:8px 14px;font:700 14px Arial;cursor:pointer}
+  .modbar button.on{color:#fff}
+  .modbar .act{margin-left:auto;border-color:var(--bev);color:var(--bev)}
+  @media (max-width:560px){.modbar .act{margin-left:0}}
+  .specpanel{border-radius:14px;padding:18px}
+  .specpanel h3{margin:4px 0 2px;font-size:24px}
+  .specpanel dl{margin:12px 0 0;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:13px}
+  .specpanel dt{color:var(--grey);font-weight:700}
+  .specpanel dd{margin:0;font-weight:700}
+  .hsinfo{margin-top:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;min-height:88px}
+  .hsinfo b{display:block;margin-bottom:4px}
 </style>
-<script type="importmap">
-{ "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-} }
-</script>
 </head>
 <body>
-<div id="stage" aria-label="Interactive 3D model of the Project SETU concept car. Drag to rotate, scroll to zoom."></div>
-
-<div class="wordmark">
-  <h1>PROJECT SETU</h1>
-  <p>3D concept · tall-boy MPV</p>
-</div>
-<div class="hint">drag — rotate<br>scroll — zoom<br>right-drag — pan</div>
-<div id="labels"></div>
-
-<div id="bar" role="toolbar" aria-label="Model view controls">
-  <div class="seg" role="group" aria-label="View mode">
-    <button class="btn on" id="mExt" aria-pressed="true">Exterior</button>
-    <button class="btn" id="mXray" aria-pressed="false">X-Ray</button>
-    <button class="btn" id="mExp" aria-pressed="false">Exploded</button>
+<header>
+  <div class="wrap">
+    <div class="tag">XCELerate 2026 · E-Track · Project SETU</div>
+    <h1>One body. Three power units.<br>The right one for each city.</h1>
+    <p>An interactive companion to our two-slide summary. Change the assumptions yourself and see how driver take-home, the power-unit choice and the roadmap respond.</p>
   </div>
-  <div class="div"></div>
-  <label class="sld"><span>EXPLODE</span><input type="range" id="explode" min="0" max="100" value="0" aria-label="Explode amount"></label>
-  <div class="div"></div>
-  <button class="btn on" id="spin" aria-pressed="true" title="Auto-rotate">&#10227;</button>
-</div>
+</header>
+<nav><div class="wrap">
+  <a href="#car">The car</a><a href="#earn">① Earnings calculator</a><a href="#decide">② City power-unit picker</a><a href="#vehicle">③ The vehicle</a><a href="#road">④ Roadmap &amp; gates</a>
+</div></nav>
 
-<script type="module">
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+<main class="wrap">
+<section id="car" style="padding-top:28px">
+  <h2>The SETU car: one body, a detachable power unit</h2>
+  <p class="sub">The highlighted <b style="color:var(--bev)">modular powertrain bay</b> (front compartment plus the underfloor tray) takes any of three pre-engineered modules. Pick a module to watch it swap, or detach it. Click the numbered points to see what stays the same.</p>
+  <div class="carwrap">
+    <div>
+      <div class="stage">
+        <svg id="carsvg" viewBox="112 22 710 428" role="img" aria-label="Side view of the SETU tall-boy MPV with the modular powertrain bay highlighted">
+          <!-- ground & workshop lift -->
+          <line x1="40" y1="378" x2="860" y2="378" stroke="#d5d7de" stroke-width="2"/>
+          <g id="lift" opacity=".35">
+            <rect x="140" y="432" width="480" height="8" rx="4" fill="#9aa0ad"/>
+            <text x="380" y="428" text-anchor="middle" font-size="12" font-weight="700" fill="#5f6368" letter-spacing="2">CERTIFIED WORKSHOP LIFT</text>
+          </g>
+          <!-- body -->
+          <path d="M140 300 L132 255 Q130 226 150 219 L255 199 L313 72 Q320 52 345 51 L738 51 Q768 52 775 72 L790 200 L795 285 Q795 301 780 301 L712 301 A60 60 0 0 0 608 301 L282 301 A60 60 0 0 0 178 301 Z"
+                fill="#ffffff" stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round"/>
+          <!-- greenhouse -->
+          <path d="M268 172 L318 78 Q323 68 334 68 L734 68 Q752 68 756 82 L768 172 Z" fill="#d6e4f0"/>
+          <rect x="424" y="66" width="12" height="108" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+          <rect x="596" y="66" width="12" height="108" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+          <line x1="262" y1="174" x2="772" y2="174" stroke="#1a1a1a" stroke-width="2"/>
+          <!-- doors -->
+          <path d="M262 176 L262 296 M430 176 L430 296 M602 176 L602 296" stroke="#1a1a1a" stroke-width="1.5" fill="none"/>
+          <line x1="602" y1="182" x2="740" y2="182" stroke="#1a1a1a" stroke-width="1.5" stroke-dasharray="5 4"/>
+          <text x="672" y="196" text-anchor="middle" font-size="10" fill="#5f6368">sliding-door rail</text>
+          <rect x="395" y="190" width="24" height="6" rx="3" fill="#1a1a1a"/><rect x="565" y="190" width="24" height="6" rx="3" fill="#1a1a1a"/>
+          <!-- lamps & mirror -->
+          <path d="M136 232 L170 224 L172 240 L137 246 Z" fill="#ffd27a" stroke="#1a1a1a" stroke-width="1.5"/>
+          <rect x="778" y="120" width="10" height="46" rx="3" fill="#e05353"/>
+          <path d="M276 160 L300 156 L302 170 L278 172 Z" fill="#1a1a1a"/>
+          <!-- bay highlight -->
+          <path class="bayglow" d="M146 214 L252 202 L262 292 L148 292 Z"/>
+          <rect class="bayglow" x="286" y="280" width="318" height="28" rx="6"/>
+          <path class="bay" d="M146 214 L252 202 L262 292 L148 292 Z"/>
+          <rect class="bay" x="286" y="280" width="318" height="28" rx="6"/>
+          <text x="445" y="324" text-anchor="middle" font-size="12" font-weight="700" fill="#b85c1b" letter-spacing="2">MODULAR POWERTRAIN BAY</text>
+          <!-- module -->
+          <g id="module"></g>
+          <!-- wheels -->
+          <g fill="#1a1a1a"><circle cx="230" cy="330" r="48"/><circle cx="660" cy="330" r="48"/></g>
+          <g fill="#c9ccd3"><circle cx="230" cy="330" r="22"/><circle cx="660" cy="330" r="22"/></g>
+          <!-- hotspots -->
+          <g id="hotspots"></g>
+        </svg>
+      </div>
+      <div class="modbar" id="modbar">
+        <button data-m="hyb">Strong hybrid</button>
+        <button data-m="cng">CNG / Bio-CNG</button>
+        <button data-m="bev">Electric</button>
+        <button class="act" id="detach">Detach module ↓</button>
+      </div>
+      <p class="note">Conversion happens only at a certified facility, followed by software commissioning, identity update, safety inspection and certification. It's a stage-gated option, proven with a physical prototype before it's promised.</p>
+    </div>
+    <div>
+      <div class="specpanel" id="specpanel"></div>
+      <div class="hsinfo" id="hsinfo"></div>
+    </div>
+  </div>
+</section>
 
-/* ---------- renderer / scene ---------- */
-const stage = document.getElementById('stage');
-const renderer = new THREE.WebGLRenderer({ antialias:true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.setSize(innerWidth, innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
-stage.appendChild(renderer.domElement);
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xF7F4ED);
-const pmrem = new THREE.PMREMGenerator(renderer);
-scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+<!-- ================= EARNINGS ================= -->
+<section id="earn">
+  <h2>Driver take-home calculator</h2>
+  <p class="sub">Monthly net earnings for a driver-owner, today's taxi vs the three SETU power units. Defaults reproduce the figures on our slides; move any slider to test them.</p>
+  <div class="grid calc">
+    <div class="card">
+      <div class="cap" style="margin-bottom:10px">Usage &amp; fares</div>
+      <div class="ctl"><label>Distance per month <span id="v-km"></span></label><input id="km" type="range" min="3000" max="9000" step="250" value="5000"><small>~5,000 owner-driver · ~8,000 two-shift fleet</small></div>
+      <div class="ctl"><label>Net fare to driver (₹/km) <span id="v-fare"></span></label><input id="fare" type="range" min="14" max="26" step="0.5" value="19"></div>
+      <div class="ctl"><label>SETU fare uplift (airport / 6-seat trips) <span id="v-up"></span></label><input id="up" type="range" min="0" max="15" step="1" value="0"><small>Same body on all three SETU units, so it applies to all three</small></div>
+      <div class="cap" style="margin:18px 0 10px">Energy</div>
+      <div class="ctl"><label>Electric car: share charged at public fast chargers <span id="v-dc"></span></label><input id="dc" type="range" min="0" max="100" step="5" value="0"><small>0% = all home / depot charging</small></div>
+      <div class="ctl"><label>Home / depot electricity (₹/kWh) <span id="v-home"></span></label><input id="home" type="range" min="5" max="12" step="0.25" value="6.875"></div>
+      <div class="ctl"><label>Public fast charging (₹/kWh) <span id="v-pub"></span></label><input id="pub" type="range" min="10" max="28" step="1" value="20"><small>Typical 2026: ₹18–25</small></div>
+      <div class="ctl"><label>CNG &amp; petrol price change <span id="v-fuel"></span></label><input id="fuel" type="range" min="-30" max="50" step="5" value="0"></div>
+      <div class="cap" style="margin:18px 0 10px">Finance</div>
+      <div class="ctl"><label>Loan tenor</label><div class="seg" id="tenor"><button data-v="48" class="on">4 yrs</button><button data-v="60">5 yrs</button><button data-v="72">6 yrs</button></div></div>
+      <div class="ctl"><label>Interest rate <span id="v-rate"></span></label><input id="rate" type="range" min="8" max="16" step="0.5" value="11"></div>
+      <button class="chip" id="reset" style="margin-top:6px">Reset to slide figures</button>
+    </div>
+    <div class="card">
+      <div class="tabs" id="view">
+        <button class="chip on" data-v="loan">During the loan</button>
+        <button class="chip" data-v="post">After the loan</button>
+        <button class="chip" data-v="life">8-year total</button>
+      </div>
+      <svg id="chart" viewBox="0 0 640 330" width="100%" role="img" aria-label="Driver earnings bar chart"></svg>
+      <div class="legend"><span><i style="background:var(--base)"></i>Today's taxi (Dzire-class CNG)</span><span><i style="background:var(--cng)"></i>SETU CNG</span><span><i style="background:var(--hyb)"></i>SETU Hybrid</span><span><i style="background:var(--bev)"></i>SETU Electric</span></div>
+      <div class="kpis" id="kpis"></div>
+      <div class="insight" id="insight"></div>
+      <p class="note">Model: illustrative 2035 scenario from Project SETU. 90% loan. Energy per km at defaults: CNG ₹5.20, hybrid ₹3.60, electric ₹1.10 (6.25 km/kWh). Maintenance per km: CNG ₹1.10, hybrid ₹0.90, electric ₹0.40. Insurance ₹4,000–5,800/month; tyres &amp; misc ₹0.42/km. Residual value is not included. Every figure is a planning input to be validated in pilots, not a forecast.</p>
+    </div>
+  </div>
+</section>
 
-const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.1, 100);
-camera.position.set(6.4, 3.4, 7.2);
+<!-- ================= DECISION ================= -->
+<section id="decide">
+  <h2>Which power unit does a city get?</h2>
+  <p class="sub">SETU applies one repeatable rule, city by city, and re-runs it as charging, fuel and regulation change. Pick a preset or set the answers yourself.</p>
+  <div class="seg" id="presets" style="margin-bottom:18px"></div>
+  <div class="grid dec">
+    <div class="card">
+      <div class="q"><div class="cap">City rule on ride-hail fleets</div><div class="seg" data-q="mandate"><button data-v="no" class="on">No EV mandate</button><button data-v="yes">Electric required</button></div></div>
+      <div class="q"><div class="cap">Home or depot charging for this driver / fleet</div><div class="seg" data-q="charge"><button data-v="yes" class="on">Available</button><button data-v="no">Not available</button></div></div>
+      <div class="q"><div class="cap">Typical routes</div><div class="seg" data-q="route"><button data-v="urban" class="on">Urban</button><button data-v="inter">Inter-city</button><button data-v="hilly">Hilly</button></div></div>
+      <div class="q"><div class="cap">Daily distance <span id="v-dkm" style="color:var(--bev)"></span></div><input id="dkm" type="range" min="80" max="450" step="10" value="180"><small class="note" style="display:block;margin-top:0">Electric real-world range 300–320 km · rule keeps ~30% buffer (≈217 km)</small></div>
+      <div class="q"><div class="cap">Buyer's top priority</div><div class="seg" data-q="prio"><button data-v="run" class="on">Lowest running cost</button><button data-v="entry">Lowest purchase price</button></div></div>
+    </div>
+    <div class="result" id="result"></div>
+  </div>
+</section>
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 1.0, 0);
-controls.enableDamping = true;
-controls.dampingFactor = 0.06;
-controls.minDistance = 4.2;
-controls.maxDistance = 16;
-controls.maxPolarAngle = 1.62;
-controls.autoRotate = true;
-controls.autoRotateSpeed = 1.1;
+<!-- ================= VEHICLE ================= -->
+<section id="vehicle">
+  <h2>One tall-boy body, three cabins</h2>
+  <p class="sub">Space and easy entry over sleek styling. About 80% of parts are shared across all three cabins. Click a cabin to see who it serves.</p>
+  <div class="grid trims" id="trims"></div>
+  <div class="card" style="margin-top:18px" id="trimInfo"></div>
+  <div class="grid specs">
+    <div class="spec"><span class="cap">Length</span><b>4.0–4.2 m</b></div>
+    <div class="spec"><span class="cap">Height</span><b>1.70–1.75 m</b></div>
+    <div class="spec"><span class="cap">Wheelbase</span><b>~2.65 m</b></div>
+    <div class="spec"><span class="cap">Durability</span><b>500,000 km · 8 yrs</b></div>
+  </div>
+  <div class="grid specs">
+    <div class="spec" style="background:var(--hyb-l)"><span class="cap">Hybrid range</span><b>850–900 km</b></div>
+    <div class="spec" style="background:var(--cng-l)"><span class="cap">CNG range</span><b>450–500 km</b></div>
+    <div class="spec" style="background:var(--bev-l)"><span class="cap">Electric range</span><b>300–320 km</b></div>
+    <div class="spec"><span class="cap">Boot (5-seat)</span><b>400–450 L</b></div>
+  </div>
+</section>
 
-/* ---------- lights ---------- */
-scene.add(new THREE.HemisphereLight(0xfff8ec, 0xd8cfb8, 0.85));
-const sun = new THREE.DirectionalLight(0xffffff, 1.7);
-sun.position.set(6, 9, 4);
-sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.camera.left = -6; sun.shadow.camera.right = 6;
-sun.shadow.camera.top = 7;  sun.shadow.camera.bottom = -3;
-sun.shadow.camera.far = 30; sun.shadow.bias = -0.0004;
-scene.add(sun);
-const fill = new THREE.DirectionalLight(0xfff2df, 0.45);
-fill.position.set(-6, 3, -6);
-scene.add(fill);
+<!-- ================= ROADMAP ================= -->
+<section id="road">
+  <h2>Roadmap: expand only when each gate is passed</h2>
+  <p class="sub">Three phases from pilot to national scale. Click a stage gate to see what has to be proven before scaling up.</p>
+  <div class="grid road">
+    <div class="phase" style="background:var(--hyb)"><span class="cap" style="color:#fff;opacity:.8">2026–28</span><h3>Pilot &amp; prove</h3>Hybrid/CNG fleet pilots · duty-cycle validation · modular-bay prototype · hub charging pilots</div>
+    <div class="phase" style="background:var(--bev)"><span class="cap" style="color:#fff;opacity:.8">2028–31</span><h3>Localise &amp; scale</h3>Premium electric scale-up · 40+ cities · charging corridors · connected stack</div>
+    <div class="phase" style="background:var(--cng)"><span class="cap" style="color:#fff;opacity:.8">2031–35</span><h3>National scale</h3>City-specific power mix · national trims · battery second life &amp; recycling</div>
+  </div>
+  <div class="grid gates" id="gates"></div>
+  <div class="gatebox" id="gatebox"></div>
+</section>
+</main>
+<footer><div class="wrap">Project SETU · XCELerate 2026 E-Track submission. All market and cost figures are directional 2035 scenario inputs, not guaranteed forecasts. Works offline, with no data collected.</div></footer>
 
-const ground = new THREE.Mesh(
-  new THREE.CircleGeometry(11, 48),
-  new THREE.ShadowMaterial({ opacity: 0.16 })
-);
-ground.rotation.x = -Math.PI/2;
-ground.receiveShadow = true;
-scene.add(ground);
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const r100 = n => Math.round(n/100)*100;
+  const inr = n => "₹" + r100(n).toLocaleString("en-IN");
+  const sgn = n => (r100(n) >= 0 ? "+" : "−") + "₹" + Math.abs(r100(n)).toLocaleString("en-IN");
+  const COL = {base:"#8a8a8a", cng:"#2e7d5b", hyb:"#1f3a93", bev:"#b85c1b"};
 
-/* ---------- materials ---------- */
-const M = {
-  ink:    new THREE.MeshStandardMaterial({ color:0x1B1A17, roughness:0.5,  metalness:0.3 }),
-  glass:  new THREE.MeshPhysicalMaterial({ color:0xD8E4E0, roughness:0.08, metalness:0.05, transparent:true, opacity:0.38 }),
-  accent: new THREE.MeshStandardMaterial({ color:0xB45A12, roughness:0.45, metalness:0.25 }),
-  accentD:new THREE.MeshStandardMaterial({ color:0x8A430E, roughness:0.55, metalness:0.2 }),
-  cream:  new THREE.MeshStandardMaterial({ color:0xF1EBDC, roughness:0.4,  metalness:0.35 }),
-  seat:   new THREE.MeshStandardMaterial({ color:0x35322E, roughness:0.92, metalness:0.02 }),
-  dark:   new THREE.MeshStandardMaterial({ color:0x24211E, roughness:0.7,  metalness:0.3 }),
-  tyre:   new THREE.MeshStandardMaterial({ color:0x171512, roughness:0.9,  metalness:0.05 }),
-  case:   new THREE.MeshStandardMaterial({ color:0x6F6A5E, roughness:0.8,  metalness:0.1 }),
-  lampW:  new THREE.MeshStandardMaterial({ color:0xFFF6E0, emissive:0xFFEDBE, emissiveIntensity:0.7 }),
-  lampR:  new THREE.MeshStandardMaterial({ color:0xB45A12, emissive:0xB45A12, emissiveIntensity:0.55 }),
-};
-const shadowed = m => { m.castShadow = true; m.receiveShadow = true; return m; };
+  // ---------- earnings model (Project SETU section 7.3) ----------
+  const CARS = [
+    {k:"base", name:"Today's taxi", price:8.00,  energy:5.20, maint:1.10, ins:4000, fuel:true,  setu:false},
+    {k:"cng",  name:"SETU CNG",     price:9.25,  energy:5.20, maint:1.10, ins:4600, fuel:true,  setu:true},
+    {k:"hyb",  name:"SETU Hybrid",  price:12.25, energy:3.60, maint:0.90, ins:5400, fuel:true,  setu:true},
+    {k:"bev",  name:"SETU Electric",price:14.25, energy:null, maint:0.40, ins:5800, fuel:false, setu:true},
+  ];
+  const TYRE_PER_KM = 2100/5000, KM_PER_KWH = 6.25;
+  const DEF = {km:5000, fare:19, up:0, dc:0, home:6.875, pub:20, fuel:0, rate:11};
+  let tenor = 48, view = "loan";
 
-/* ---------- groups (explode layers) ---------- */
-const roofG = new THREE.Group(), glassG = new THREE.Group(), bodyG = new THREE.Group(),
-      seatsG = new THREE.Group(), powerG = new THREE.Group(), chassisG = new THREE.Group(),
-      wheelsG = new THREE.Group();
-scene.add(roofG, glassG, bodyG, seatsG, powerG, chassisG, wheelsG);
-
-/* ---------- lower body shell (side profile extruded) ---------- */
-function bodyProfile(){
-  const s = new THREE.Shape();
-  s.moveTo(-2.00, 0.38);
-  s.lineTo(-2.00, 0.95);
-  s.quadraticCurveTo(-2.00, 1.06, -1.88, 1.08);
-  s.lineTo(1.55, 1.08);
-  s.quadraticCurveTo(1.85, 1.06, 1.98, 0.92);
-  s.quadraticCurveTo(2.06, 0.82, 2.04, 0.66);
-  s.lineTo(2.02, 0.45);
-  s.quadraticCurveTo(2.00, 0.38, 1.92, 0.38);
-  s.lineTo(1.74, 0.38);
-  s.absarc(1.30, 0.38, 0.44, 0, Math.PI, false);   // front wheel arch
-  s.lineTo(-0.81, 0.38);
-  s.absarc(-1.25, 0.38, 0.44, 0, Math.PI, false);  // rear wheel arch
-  s.lineTo(-2.00, 0.38);
-  return s;
-}
-{
-  const g = new THREE.ExtrudeGeometry(bodyProfile(), { depth:1.62, bevelEnabled:true, bevelThickness:0.05, bevelSize:0.05, bevelSegments:2, curveSegments:24 });
-  g.translate(0, 0, -0.81);
-  bodyG.add(shadowed(new THREE.Mesh(g, M.ink)));
-}
-/* side accent blades + handles + lights */
-for(const sz of [-1, 1]){
-  const blade = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.05, 0.02), M.accent);
-  blade.position.set(-0.15, 0.94, sz*0.868); bodyG.add(blade);
-  const belt = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.035, 0.02), M.accent);
-  belt.position.set(-0.2, 1.10, sz*0.862); bodyG.add(belt);
-  for(const hx of [0.45, -0.45]){
-    const h = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.03, 0.02), M.cream);
-    h.position.set(hx, 1.00, sz*0.868); bodyG.add(h);
+  function emi(P, ratePct, n){ const r = ratePct/1200; return P*r/(1-Math.pow(1+r,-n)); }
+  function state(){ const s = {}; for (const k in DEF) s[k] = parseFloat($(k).value); return s; }
+  function runPerKm(c, s){
+    const e = c.fuel ? c.energy*(1+s.fuel/100) : ((1-s.dc/100)*s.home + (s.dc/100)*s.pub)/KM_PER_KWH;
+    return e + c.maint + TYRE_PER_KM;
   }
-  const mir = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.07, 0.14), M.ink);
-  mir.position.set(1.02, 1.28, sz*0.92); bodyG.add(shadowed(mir));
-  const hl = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.11, 0.30), M.lampW);
-  hl.position.set(2.065, 0.86, sz*0.52); bodyG.add(hl);
-  const tl = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, 0.24), M.lampR);
-  tl.position.set(-2.045, 0.88, sz*0.55); bodyG.add(tl);
-}
-
-/* ---------- glasshouse ---------- */
-function glassProfile(){
-  const s = new THREE.Shape();
-  s.moveTo(-1.72, 1.02);
-  s.lineTo(-1.62, 1.62);
-  s.quadraticCurveTo(-1.58, 1.70, -1.48, 1.70);
-  s.lineTo(0.72, 1.70);
-  s.quadraticCurveTo(0.82, 1.70, 0.88, 1.60);
-  s.lineTo(1.28, 1.06);
-  s.quadraticCurveTo(1.30, 1.02, 1.24, 1.02);
-  s.lineTo(-1.72, 1.02);
-  return s;
-}
-{
-  const g = new THREE.ExtrudeGeometry(glassProfile(), { depth:1.46, bevelEnabled:true, bevelThickness:0.04, bevelSize:0.04, bevelSegments:2, curveSegments:20 });
-  g.translate(0, 0, -0.73);
-  const mesh = new THREE.Mesh(g, M.glass);
-  mesh.castShadow = true;
-  glassG.add(mesh);
-}
-/* pillars */
-function pillar(x1, y1, x2, y2, w){
-  for(const sz of [-1, 1]){
-    const len = Math.hypot(x2-x1, y2-y1);
-    const p = new THREE.Mesh(new THREE.BoxGeometry(w, len, 0.07), M.ink);
-    p.position.set((x1+x2)/2, (y1+y2)/2, sz*0.755);
-    p.rotation.z = -Math.atan2(x2-x1, y2-y1); // align box Y-axis along the segment
-    glassG.add(shadowed(p));
+  function calc(){
+    const s = state();
+    return CARS.map(c => {
+      const rev = s.km * s.fare * (c.setu ? 1 + s.up/100 : 1);
+      const run = runPerKm(c, s)*s.km + c.ins;
+      const e = emi(c.price*1e5*0.9, s.rate, tenor);
+      const loan = rev - run - e, post = rev - run;
+      const life = loan*Math.min(tenor,96) + post*Math.max(0,96-tenor);
+      return {c, rev, loan, post, life, perKm: runPerKm(c,s)};
+    });
   }
-}
-pillar(0.98, 1.04, 0.80, 1.70, 0.10);   // A
-pillar(0.05, 1.04, 0.05, 1.70, 0.09);   // B
-pillar(-1.32, 1.04, -1.52, 1.70, 0.11); // C
-pillar(-1.70, 1.04, -1.66, 1.66, 0.10);  // D
 
-/* ---------- roof ---------- */
-{
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(2.52, 0.09, 1.60), M.ink);
-  roof.position.set(-0.38, 1.745, 0); roofG.add(shadowed(roof));
-  for(const sz of [-1, 1]){
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.045, 0.07), M.ink);
-    rail.position.set(-0.38, 1.815, sz*0.52); roofG.add(shadowed(rail));
+  function chart(rows){
+    const svg = $("chart"), W=640, H=330, L=20, B=270, T=40;
+    const vals = rows.map(r => view==="loan"?r.loan:view==="post"?r.post:r.life);
+    const max = Math.max(...vals, 1)*1.15, min = Math.min(0, ...vals);
+    const scale = v => (B-T) * v / (max - min);
+    const bw = 110, gap = (W - 2*L - 4*bw)/3;
+    let out = "";
+    const baseV = vals[0], by = B - scale(baseV - min);
+    rows.forEach((r,i) => {
+      const v = vals[i], x = L + i*(bw+gap), h = Math.max(2, scale(v - min)), y = B - h;
+      out += `<rect x="${x}" y="${y}" width="${bw}" height="${h}" rx="6" fill="${COL[r.c.k]}"/>`;
+      out += `<text x="${x+bw/2}" y="${y+22}" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">${view==="life"?"₹"+(v/1e5).toFixed(1)+" L":inr(v)}</text>`;
+      out += `<text x="${x+bw/2}" y="${B+20}" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1a1a">${r.c.name}</text>`;
+      if (i>0){ const d = v - baseV; out += `<text x="${x+bw/2}" y="${B+38}" text-anchor="middle" font-size="12" font-weight="700" fill="${d>=0?'#2e7d5b':'#c62828'}">${view==="life"?(d>=0?"+":"−")+"₹"+(Math.abs(d)/1e5).toFixed(1)+" L":sgn(d)} vs today</text>`; }
+    });
+    out += `<line x1="${L-6}" x2="${W-L+6}" y1="${by}" y2="${by}" stroke="#1a1a1a" stroke-dasharray="5 4" stroke-width="1.2"/>`;
+    out += `<text x="${W-L}" y="${T-18}" text-anchor="end" font-size="12" fill="#5f6368">${view==="loan"?"Net per month while paying EMI":view==="post"?"Net per month after the loan is repaid":"Total take-home over 8 years (96 months)"} · dashed = today's taxi</text>`;
+    svg.innerHTML = out;
   }
-  const fin = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.09, 0.06), M.accent);
-  fin.position.set(-1.45, 1.83, 0); roofG.add(fin);
-}
 
-/* ---------- wheels ---------- */
-function makeWheel(){
-  const w = new THREE.Group();
-  const tyre = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.24, 36), M.tyre);
-  tyre.rotation.x = Math.PI/2; w.add(shadowed(tyre));
-  const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.205, 0.205, 0.25, 28), M.cream);
-  rim.rotation.x = Math.PI/2; w.add(rim);
-  for(const sz of [-1, 1]) for(let i=0;i<5;i++){
-    const sp = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.34, 0.02), M.ink);
-    sp.position.z = sz*0.118; sp.rotation.z = i*Math.PI*2/5; w.add(sp);
+  function render(){
+    const s = state();
+    $("v-km").textContent = s.km.toLocaleString("en-IN")+" km"; $("v-fare").textContent = "₹"+s.fare;
+    $("v-up").textContent = s.up+"%"; $("v-dc").textContent = s.dc+"%"; $("v-home").textContent = "₹"+s.home.toFixed(2);
+    $("v-pub").textContent = "₹"+s.pub; $("v-fuel").textContent = (s.fuel>0?"+":"")+s.fuel+"%"; $("v-rate").textContent = s.rate+"%";
+    const rows = calc(); chart(rows);
+    const base = rows[0];
+    $("kpis").innerHTML = rows.map(r => {
+      const d = r.loan - base.loan;
+      let be = "";
+      if (r.c.k !== "base"){
+        const gap = base.perKm - r.perKm, prem = (r.c.price - base.c.price)*1e5;
+        be = gap > 0 ? `pays back its extra price in ~${Math.round(prem/gap/1000)}k km` : "no running-cost saving";
+      } else be = "the baseline";
+      return `<div class="kpi" style="border-top:4px solid ${COL[r.c.k]}"><span class="cap">${r.c.name}</span><b>${inr(r.loan)}</b><em class="${r.c.k==='base'?'':(d>=0?'pos':'neg')}">${r.c.k==='base'?'per month in loan':sgn(d)+' / month'}</em><div class="note" style="margin-top:4px">₹${r.perKm.toFixed(2)}/km to run · ${be}</div></div>`;
+    }).join("");
+    const best = rows.slice(1).reduce((a,b) => (view==="loan"?b.loan>a.loan:view==="post"?b.post>a.post:b.life>a.life) ? b : a);
+    const bev = rows[3], lead = bev.loan - base.loan;
+    let msg = `Highest ${view==="loan"?"monthly take-home during the loan":view==="post"?"monthly take-home after the loan":"8-year take-home"}: <span style="color:${COL[best.c.k]}">${best.c.name}</span>. `;
+    msg += lead >= 0 ? `The electric SETU leads today's taxi by ${sgn(lead).slice(1)}/month while the loan runs.` : `At these settings the electric SETU trails today's taxi by ${sgn(lead).slice(1)}/month during the loan. Try more home/depot charging, a longer tenor or more km.`;
+    if (s.dc >= 50) msg += " Heavy public fast charging erodes the electric lead, which is why the roadmap prioritises depot and hub charging.";
+    $("insight").innerHTML = msg;
   }
-  for(const sz of [-1, 1]){
-    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.03, 20), M.accent);
-    hub.rotation.x = Math.PI/2; hub.position.z = sz*0.12; w.add(hub);
+
+  ["km","fare","up","dc","home","pub","fuel","rate"].forEach(id => $(id).addEventListener("input", render));
+  $("tenor").addEventListener("click", e => { const b = e.target.closest("button"); if(!b) return;
+    [...$("tenor").children].forEach(x => x.classList.toggle("on", x===b)); tenor = +b.dataset.v; render(); });
+  $("view").addEventListener("click", e => { const b = e.target.closest("button"); if(!b) return;
+    [...$("view").children].forEach(x => x.classList.toggle("on", x===b)); view = b.dataset.v; render(); });
+  $("reset").addEventListener("click", () => { for (const k in DEF) $(k).value = DEF[k]; tenor = 48;
+    [...$("tenor").children].forEach(x => x.classList.toggle("on", x.dataset.v==="48")); render(); });
+  render();
+
+  // ---------- decision rule ----------
+  const ans = {mandate:"no", charge:"yes", route:"urban", prio:"run"};
+  const PRESETS = [
+    {n:"Delhi fleet",        a:{mandate:"yes",charge:"yes",route:"urban",prio:"run"},  km:200},
+    {n:"Bengaluru owner-driver", a:{mandate:"no",charge:"yes",route:"urban",prio:"run"}, km:170},
+    {n:"Tier-2 city, no charging", a:{mandate:"no",charge:"no",route:"urban",prio:"entry"}, km:150},
+    {n:"Mumbai–Pune outstation", a:{mandate:"no",charge:"no",route:"inter",prio:"run"}, km:320},
+    {n:"Hill routes (Shimla)", a:{mandate:"no",charge:"no",route:"hilly",prio:"run"}, km:180},
+  ];
+  $("presets").innerHTML = PRESETS.map((p,i) => `<button class="chip" data-i="${i}">${p.n}</button>`).join("");
+  $("presets").addEventListener("click", e => { const b = e.target.closest("button"); if(!b) return;
+    const p = PRESETS[+b.dataset.i]; Object.assign(ans, p.a); $("dkm").value = p.km;
+    [...$("presets").children].forEach(x => x.classList.toggle("on", x===b));
+    document.querySelectorAll("[data-q]").forEach(g => [...g.children].forEach(x => x.classList.toggle("on", x.dataset.v===ans[g.dataset.q])));
+    decide(); });
+  document.querySelectorAll("[data-q]").forEach(g => g.addEventListener("click", e => {
+    const b = e.target.closest("button"); if(!b) return; ans[g.dataset.q] = b.dataset.v;
+    [...g.children].forEach(x => x.classList.toggle("on", x===b));
+    [...$("presets").children].forEach(x => x.classList.remove("on")); decide(); }));
+  $("dkm").addEventListener("input", () => { [...$("presets").children].forEach(x => x.classList.remove("on")); decide(); });
+
+  function decide(){
+    const km = +$("dkm").value; $("v-dkm").textContent = km+" km/day";
+    const LIMIT = 217; let r, why = [], path = [];
+    if (ans.mandate === "yes"){
+      path = ["City mandates electric fleets", "→ Electric"];
+      r = "bev"; why = ["The city requires zero-emission ride-hail fleets, so regulation decides.", ans.charge==="no" ? "Pair with depot or hub charging from a fleet partner; public fast charging alone erodes earnings." : "Home/depot charging keeps energy cost near ₹1.10/km.", km > LIMIT ? "Daily distance is above the ~217 km buffer, so plan one off-peak top-up or two-shift depot charging." : "Daily distance fits inside the range buffer, so no mid-shift charging is needed."];
+    } else if (ans.charge === "yes" && km <= LIMIT && ans.route === "urban"){
+      path = ["No mandate", "Charging available · within range · urban", "→ Electric"];
+      r = "bev"; why = ["Lowest running cost (₹1.50/km incl. maintenance), about ₹7,600/month more take-home at our base case.", "Daily km fit within real-world range with a ~30% buffer, so no peak-hour charging stops.", "Battery health certificate protects resale value."];
+    } else if (ans.route !== "urban" || km > LIMIT || (ans.charge === "no" && ans.prio === "run")){
+      path = ["No mandate", ans.route!=="urban" ? (ans.route==="hilly"?"Hilly routes":"Inter-city routes") : km>LIMIT ? "Beyond electric range buffer" : "No charging access", "→ Strong hybrid"];
+      r = "hyb"; why = ["850–900 km range and ~5-minute refuelling, with no dependence on chargers.", ans.route==="hilly" ? "Handles sustained climbs without range anxiety; grade-aware dispatch plans the routes." : "Covers long days and outstation trips without charging downtime.", "Candidate for a certified switch to electric if depot charging arrives later."];
+    } else {
+      path = ["No mandate", "No charging · urban · price-first buyer", "→ CNG / Bio-CNG"];
+      r = "cng"; why = ["Lowest purchase price (₹9.0–9.5 L), so the easiest loan for an owner-driver.", "Fast 5–10 minute refuelling on India's growing CNG network; Bio-CNG adds a low-carbon path.", "Six-seat Shared cabin opens pooled and family trips a sedan can't take."];
+    }
+    const M = {bev:["Electric (BEV)","var(--bev)","var(--bev-l)","300–320 km real-world · fast DC + overnight AC"],
+               hyb:["Strong hybrid","var(--hyb)","var(--hyb-l)","850–900 km · ~5 min refuel · flex-fuel ready"],
+               cng:["CNG / Bio-CNG","var(--cng)","var(--cng-l)","450–500 km · 5–10 min refuel · lowest entry price"]}[r];
+    $("result").style.background = M[2];
+    $("result").innerHTML = `<div class="cap">SETU recommends</div><h3 style="color:${M[1]}">${M[0]}</h3><div style="font-weight:700">${M[3]}</div><ul>${why.map(w=>`<li>${w}</li>`).join("")}</ul><div class="path">${path.map(p=>`<span>${p}</span>`).join("")}</div><p class="note">The same body and interfaces are used whichever power unit is chosen, so the decision can be revisited as the city changes.</p>`;
   }
-  return w;
-}
-const wheelBase = [];
-for(const [wx, wz] of [[1.30,0.80],[1.30,-0.80],[-1.25,0.80],[-1.25,-0.80]]){
-  const w = makeWheel();
-  w.position.set(wx, 0.34, wz);
-  w.userData.base = new THREE.Vector3(wx, 0.34, wz);
-  w.userData.side = Math.sign(wz);
-  wheelsG.add(w); wheelBase.push(w);
-}
+  decide();
 
-/* ---------- chassis + floor ---------- */
-{
-  for(const sz of [-1, 1]){
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.10, 0.10), M.dark);
-    rail.position.set(0, 0.42, sz*0.55); chassisG.add(shadowed(rail));
+  // ---------- trims ----------
+  const TRIMS = [
+    {n:"COMMUTE", col:"#1f3a93", rows:[2,3], boot:48, seats:"5 seats · 4 hinged doors", seg:"Daily commute (~30%) + intra-city on-demand (~28%)", pt:"Default: strong hybrid; electric where charging density is high; CNG where entry price dominates.", why:"The volume engine: high frequency, price-sensitive, predictable routes."},
+    {n:"SHARED",  col:"#2e7d5b", rows:[2,2,2], boot:26, seats:"6 seats · sliding rear doors", seg:"Shared / pooled (~17%), families, Tier-2/3", pt:"Default: CNG as the affordability option; hybrid as the alternative.", why:"More paying seats per trip: the space-efficient answer to pooled demand."},
+    {n:"PREMIUM", col:"#b85c1b", rows:[2,2], boot:70, seats:"Captain chairs · 400–450 L boot", seg:"Airport (~10%) + inter-city (~9%) + premium/corporate (~6%)", pt:"Default: electric where charging is dependable; hybrid where fast charging is thin.", why:"A quarter of trips but a disproportionate share of the profit pool."},
+  ];
+  function cabin(t){
+    let s = `<svg viewBox="0 0 120 210" width="110" style="display:block;margin:10px auto"><rect x="20" y="5" width="80" height="200" rx="26" fill="#f4f4f5" stroke="#1a1a1a" stroke-width="2"/>`;
+    s += `<rect x="28" y="${197-t.boot}" width="64" height="${t.boot}" rx="4" fill="#fbf1e6"/><text x="60" y="${193}" text-anchor="middle" font-size="9" fill="#b85c1b">boot</text>`;
+    let y = 30;
+    t.rows.forEach((n,ri) => { const sw = n===3?16:22, gap = (64 - n*sw)/(n-1||1);
+      for (let k=0;k<n;k++) s += `<rect x="${28 + k*(sw+gap)}" y="${y}" width="${sw}" height="24" rx="4" fill="${ri===0&&k===0?'#1a1a1a':t.col}"/>`;
+      y += 38; });
+    return s + `</svg>`;
   }
-  for(const cx of [-1.2, 0, 1.2]){
-    const cross = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.08, 1.20), M.dark);
-    cross.position.set(cx, 0.42, 0); chassisG.add(cross);
+  $("trims").innerHTML = TRIMS.map((t,i) => `<div class="card trim${i===0?' on':''}" data-i="${i}"><h3 style="color:${t.col}">${t.n}</h3>${cabin(t)}<div style="text-align:center;font-weight:700;font-size:13px">${t.seats}</div></div>`).join("");
+  function trimInfo(i){ const t = TRIMS[i];
+    $("trimInfo").innerHTML = `<span class="cap" style="color:${t.col}">${t.n} cabin</span><p style="margin:6px 0"><b>Serves:</b> ${t.seg}</p><p style="margin:6px 0"><b>Power unit:</b> ${t.pt}</p><p style="margin:6px 0;color:var(--grey)">${t.why} Dark seat = driver.</p>`; }
+  $("trims").addEventListener("click", e => { const c = e.target.closest(".trim"); if(!c) return;
+    [...$("trims").children].forEach(x => x.classList.toggle("on", x===c)); trimInfo(+c.dataset.i); });
+  trimInfo(0);
+
+  // ---------- gates ----------
+  const GATES = [
+    ["Architecture","All three power-unit modules meet crash, NVH, thermal and packaging requirements in one body.","Crash tests per module; thermal validation in 45°C+ heat and cold starts."],
+    ["Durability","High-utilisation operation toward the 500,000 km / 8-year commercial target.","Fleet pilot vehicles logging real duty cycles; battery ageing vs resale assumptions."],
+    ["Conversion","Physically convert a vehicle and measure downtime, cost, safety, performance and certification needs.","If conversion is too costly, SETU continues as conventional variants; the platform does not depend on it."],
+    ["Infrastructure","Reliable charging at selected energy hubs and fleet depots.","Depot/hub charging is where the electric earnings lead comes from."],
+    ["Economics","Actual driver cost and earnings vs the scenario model.","Net monthly take-home must beat today's taxi in each unit's target scenario."],
+    ["Scale","Expand only where reliability, utilisation, infrastructure and financing clear thresholds.","City-by-city go/no-go, re-run as conditions change."],
+  ];
+  $("gates").innerHTML = GATES.map((g,i) => `<div class="gate${i===0?' on':''}" data-i="${i}"><i>${i+1}</i><b>${g[0]}</b></div>`).join("");
+  function gate(i){ const g = GATES[i]; $("gatebox").innerHTML = `<span class="cap">Gate ${i+1} · ${g[0]}</span><p style="margin:6px 0 4px;font-weight:700">${g[1]}</p><p style="margin:0;color:var(--grey)">${g[2]}</p>`; }
+  $("gates").addEventListener("click", e => { const c = e.target.closest(".gate"); if(!c) return;
+    [...$("gates").children].forEach(x => x.classList.toggle("on", x===c)); gate(+c.dataset.i); });
+  gate(0);
+})();
+</script>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const lbl = (x,y,t,c) => `<text x="${x}" y="${y}" text-anchor="middle" font-size="10" font-weight="700" fill="${c||'#fff'}">${t}</text>`;
+  const cells = (x,y,w,h,n,c) => { let s=""; for(let i=1;i<n;i++) s+=`<line x1="${x+i*w/n}" y1="${y+2}" x2="${x+i*w/n}" y2="${y+h-2}" stroke="${c}" stroke-width="1.2"/>`; return s; };
+  const MODS = {
+    bev: { name:"Electric (BEV)", col:"#b85c1b", bg:"#fbf1e6",
+      svg: `<rect x="176" y="244" width="60" height="34" rx="8" fill="#b85c1b"/>${lbl(206,265,"e-motor")}
+            <rect x="160" y="222" width="40" height="18" rx="4" fill="#d9894f"/>${lbl(180,235,"inverter")}
+            <path d="M236 262 C 262 262 262 292 292 292" stroke="#ff9f43" stroke-width="4" fill="none"/>
+            <rect x="290" y="283" width="310" height="22" rx="5" fill="#b85c1b"/>${cells(290,283,310,22,14,"#f3c9a6")}
+            ${lbl(445,299,"45–50 kWh LFP battery pack")}`,
+      spec: [["Power unit","100–120 kW electric drive"],["Energy","45–50 kWh LFP-class battery"],["Range","300–320 km real-world"],["Replenish","Fast DC + overnight AC"],["Efficiency","~6.0–6.5 km/kWh"],["Price (2035E)","₹14.0–14.5 L"],["Best for","Metros with depot/home charging · Premium & airport"]],
+      tag:"Lowest running cost: ₹1.50/km" },
+    hyb: { name:"Strong hybrid", col:"#1f3a93", bg:"#e8ecf8",
+      svg: `<rect x="156" y="226" width="68" height="54" rx="6" fill="#1f3a93"/>${lbl(190,250,"1.5 L")}${lbl(190,264,"Atkinson")}
+            <rect x="226" y="240" width="30" height="36" rx="6" fill="#4a64c4"/>${lbl(241,262,"e-mtr",)}
+            <rect x="296" y="284" width="70" height="20" rx="4" fill="#4a64c4"/>${lbl(331,298,"1.5–2 kWh")}
+            <rect x="470" y="283" width="126" height="22" rx="8" fill="#1f3a93"/>${lbl(533,298,"fuel tank · flex-fuel")}
+            <path d="M256 262 C 276 262 280 294 296 294" stroke="#8fa3e8" stroke-width="3" fill="none"/>`,
+      spec: [["Power unit","1.5 L Atkinson petrol / flex-fuel + e-motor"],["Energy","1.5–2.0 kWh hybrid battery + fuel tank"],["Range","850–900 km"],["Replenish","~5 min refuelling"],["Efficiency","~27–30 km/l equivalent (target)"],["Price (2035E)","₹12.0–12.5 L"],["Best for","Inter-city, hilly routes, weak charging"]],
+      tag:"No charging dependency" },
+    cng: { name:"CNG / Bio-CNG", col:"#2e7d5b", bg:"#e6f2ec",
+      svg: `<rect x="156" y="228" width="92" height="52" rx="6" fill="#2e7d5b"/>${lbl(202,250,"1.2–1.5 L")}${lbl(202,264,"petrol + CNG")}
+            <rect x="292" y="284" width="140" height="20" rx="10" fill="#2e7d5b"/><rect x="438" y="284" width="112" height="20" rx="10" fill="#2e7d5b"/>
+            ${lbl(362,298,"CNG cylinder")}${lbl(494,298,"CNG cylinder")}
+            <rect x="556" y="284" width="44" height="20" rx="5" fill="#5aa684"/>${lbl(578,298,"petrol")}`,
+      spec: [["Power unit","1.2–1.5 L petrol + factory CNG system"],["Energy","~60–65 L water-equivalent CNG + petrol reserve"],["Range","450–500 km"],["Replenish","~5–10 min refuelling"],["Efficiency","~28–30 km/kg (target)"],["Price (2035E)","₹9.0–9.5 L"],["Best for","Owner-drivers, Tier-2/3, Shared 6-seat"]],
+      tag:"Lowest entry price · underfloor tanks keep the boot free" },
+  };
+  const HS = [
+    [530, 40, "Common body & floor", "One monocoque, floor, suspension, HVAC and core electrics across all trims and power units. About 80% of parts are shared, and the body is built for 500,000 km / 8 years."],
+    [290, 316, "Standard mounting points", "The subframe and bay mounting points are identical for every module, so a module bolts into the same hard points."],
+    [132, 262, "Cooling interface", "Radiator and thermal circuits are sized for the most demanding module (engine or battery/inverter) and connect through common ports."],
+    [268, 236, "Electrical / HV interface", "A common wiring backbone with a defined low-voltage and high-voltage connector; software is re-commissioned after any swap."],
+    [770, 214, "Energy port", "The same flap position carries a fuel filler, CNG nozzle or charge port, depending on the fitted module."],
+  ];
+  const g = $("module"); let cur = "bev", detached = false, busy = false;
+  function paint(k){
+    const m = MODS[k];
+    g.innerHTML = m.svg;
+    $("specpanel").style.background = m.bg;
+    $("specpanel").innerHTML = `<span class="cap">Fitted module</span><h3 style="color:${m.col}">${m.name}</h3><div style="font-weight:700;font-size:13px">${m.tag}</div><dl>${m.spec.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>`;
+    [...$("modbar").querySelectorAll("[data-m]")].forEach(b => { const on = b.dataset.m===k; b.classList.toggle("on", on); b.style.background = on ? MODS[b.dataset.m].col : "#fff"; b.style.borderColor = MODS[b.dataset.m].col; b.style.color = on ? "#fff" : MODS[b.dataset.m].col; });
   }
-  const floor = new THREE.Mesh(new THREE.BoxGeometry(3.30, 0.07, 1.55), M.dark);
-  floor.position.set(0, 0.60, 0); chassisG.add(shadowed(floor));
-}
-
-/* ---------- swappable power unit ---------- */
-{
-  const unit = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.30, 1.05), M.accent);
-  unit.position.set(0, 0.38, 0); powerG.add(shadowed(unit));
-  const lid = new THREE.Mesh(new THREE.BoxGeometry(1.19, 0.06, 1.09), M.accentD);
-  lid.position.set(0, 0.55, 0); powerG.add(shadowed(lid));
-  for(const [bx, bz] of [[-0.5,-0.45],[0.5,-0.45],[-0.5,0.45],[0.5,0.45]]){
-    const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.05, 12), M.ink);
-    bolt.position.set(bx, 0.585, bz); powerG.add(bolt);
-  }
-  const port = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 0.30), M.ink);
-  port.position.set(0.66, 0.38, 0); powerG.add(port);
-}
-
-/* ---------- interior : seats, dash, steering, luggage ---------- */
-function makeSeat(){
-  const g = new THREE.Group();
-  const base = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.10, 0.50), M.seat);
-  base.position.y = 0.05; g.add(shadowed(base));
-  const back = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.55, 0.50), M.seat);
-  back.position.set(-0.25, 0.36, 0); back.rotation.z = 0.10; g.add(shadowed(back));
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.14, 0.24), M.seat);
-  head.position.set(-0.29, 0.68, 0); g.add(shadowed(head));
-  const stitch = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.015, 0.06), M.accent);
-  stitch.position.set(0, 0.105, 0); g.add(stitch);
-  return g;
-}
-for(const rx of [0.85, 0.05, -0.75]) for(const sz of [-1, 1]){
-  const s = makeSeat(); s.position.set(rx, 0.64, sz*0.40); seatsG.add(s);
-}
-{
-  const dash = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.17, 1.50), M.dark);
-  dash.position.set(1.56, 1.00, 0); seatsG.add(shadowed(dash));
-  const col = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.30, 10), M.dark);
-  col.position.set(1.38, 0.95, -0.40); col.rotation.z = 1.1; seatsG.add(col);
-  const sw = new THREE.Mesh(new THREE.TorusGeometry(0.155, 0.028, 12, 32), M.dark);
-  sw.position.set(1.30, 1.03, -0.40); sw.rotation.y = Math.PI/2 - 0.35; seatsG.add(shadowed(sw));
-  for(const sz of [-1, 1]){
-    const bag = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.34, 0.58), M.case);
-    bag.position.set(-1.52, 0.82, sz*0.33); seatsG.add(shadowed(bag));
-  }
-}
-
-/* ---------- explode rig ---------- */
-const layers = [
-  { g: roofG,    dy: 2.65 },
-  { g: glassG,   dy: 2.15 },
-  { g: bodyG,    dy: 1.60 },
-  { g: seatsG,   dy: 0.45 },
-  { g: chassisG, dy: 0.00 },
-  { g: powerG,   dy: -0.22 },
-];
-let explodeTarget = 0, explodeCur = 0;
-function applyExplode(t){
-  for(const l of layers) l.g.position.y = l.dy * t;
-  for(const w of wheelBase) w.position.z = w.userData.base.z + w.userData.side * 0.55 * t;
-}
-
-/* ---------- x-ray ---------- */
-const xraySet = [
-  { m: M.ink,   op: 0.13 },
-  { m: M.glass, op: 0.07 },
-];
-let xray = false;
-function setXray(on){
-  xray = on;
-  for(const {m, op} of xraySet){
-    m.transparent = true;
-    m.opacity = on ? op : (m === M.glass ? 0.38 : 1);
-    m.depthWrite = !on;
-    if(!on && m !== M.glass) m.transparent = false;
-  }
-  M.ink.needsUpdate = true; M.glass.needsUpdate = true;
-}
-
-/* ---------- labels ---------- */
-const labelDefs = [
-  { text:'SWAPPABLE POWER UNIT', parent: powerG,   pos:[0, 0.75, 0] },
-  { text:'6 SEATS · 2 + 2 + 2',  parent: seatsG,   pos:[0.05, 1.65, 0.4] },
-  { text:'400–450 L BOOT',       parent: seatsG,   pos:[-1.52, 1.25, 0] },
-  { text:'SKATE CHASSIS',        parent: chassisG, pos:[1.55, 0.30, 0.55] },
-];
-const labelBox = document.getElementById('labels');
-const labels = labelDefs.map(d => {
-  const a = new THREE.Object3D(); a.position.set(...d.pos); d.parent.add(a);
-  const el = document.createElement('div');
-  el.className = 'tag'; el.innerHTML = `<i></i>${d.text}`;
-  labelBox.appendChild(el);
-  return { a, el };
-});
-const _v = new THREE.Vector3();
-function updateLabels(show){
-  for(const {a, el} of labels){
-    if(!show){ el.classList.remove('on'); continue; }
-    a.getWorldPosition(_v); _v.project(camera);
-    if(_v.z > 1){ el.classList.remove('on'); continue; }
-    el.style.left = ((_v.x*0.5+0.5)*innerWidth) + 'px';
-    el.style.top  = ((-_v.y*0.5+0.5)*innerHeight) + 'px';
-    el.classList.add('on');
-  }
-}
-
-/* ---------- controls ---------- */
-const btns = { ext: document.getElementById('mExt'), xray: document.getElementById('mXray'), exp: document.getElementById('mExp') };
-const slider = document.getElementById('explode');
-const spinBtn = document.getElementById('spin');
-let mode = 'ext';
-function setActive(){
-  for(const [k, b] of Object.entries(btns)){
-    const on = (k==='ext'&&mode==='ext')||(k==='xray'&&mode==='xray')||(k==='exp'&&mode==='exp');
-    b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
-  }
-}
-function setMode(m){
-  mode = m; setActive();
-  if(m === 'ext'){ explodeTarget = 0; setXray(false); }
-  if(m === 'xray'){ explodeTarget = 0; setXray(true); }
-  if(m === 'exp'){ explodeTarget = 1; setXray(false); }
-  slider.value = explodeTarget * 100;
-}
-btns.ext.onclick  = () => setMode('ext');
-btns.xray.onclick = () => setMode('xray');
-btns.exp.onclick  = () => setMode('exp');
-slider.addEventListener('input', () => {
-  explodeTarget = slider.value / 100;
-  mode = 'custom'; setActive();
-  setXray(false);
-});
-spinBtn.onclick = () => {
-  controls.autoRotate = !controls.autoRotate;
-  spinBtn.classList.toggle('on', controls.autoRotate);
-  spinBtn.setAttribute('aria-pressed', controls.autoRotate);
-};
-renderer.domElement.addEventListener('pointerdown', () => {
-  if(controls.autoRotate){ controls.autoRotate = false; spinBtn.classList.remove('on'); spinBtn.setAttribute('aria-pressed','false'); }
-}, { once:false });
-
-/* ---------- loop ---------- */
-addEventListener('resize', () => {
-  camera.aspect = innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
-});
-const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-if(reduceMotion){ controls.autoRotate = false; spinBtn.classList.remove('on'); }
-
-(function tick(){
-  requestAnimationFrame(tick);
-  explodeCur += (explodeTarget - explodeCur) * 0.085;
-  if(Math.abs(explodeTarget - explodeCur) < 0.0005) explodeCur = explodeTarget;
-  applyExplode(explodeCur);
-  controls.update();
-  updateLabels(mode !== 'ext' || explodeCur > 0.03);
-  renderer.render(scene, camera);
+  function drop(on){ detached = on; g.style.transform = on ? "translateY(130px)" : "translateY(0)"; $("lift").setAttribute("opacity", on ? "1" : ".35"); $("detach").textContent = on ? "Fit module ↑" : "Detach module ↓"; }
+  $("modbar").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b || busy) return;
+    if (b.id === "detach") { drop(!detached); return; }
+    const k = b.dataset.m; if (k === cur && !detached) return;
+    busy = true;
+    const swap = () => { cur = k; paint(k); setTimeout(() => { drop(false); setTimeout(() => busy = false, 650); }, 250); };
+    if (detached) swap(); else { drop(true); setTimeout(swap, 700); }
+  });
+  $("hotspots").innerHTML = HS.map(([x,y],i) => `<g class="hs" data-i="${i}" tabindex="0" role="button" aria-label="${HS[i][2]}"><circle class="ring" cx="${x}" cy="${y}" r="11"/><circle class="dot" cx="${x}" cy="${y}" r="11" fill="#1a1a1a"/><text x="${x}" y="${y+4}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">${i+1}</text></g>`).join("");
+  function hs(i){ [...$("hotspots").children].forEach(n => n.classList.toggle("on", +n.dataset.i===i));
+    $("hsinfo").innerHTML = `<span class="cap">Common to all modules</span><b>${HS[i][2]}</b><span style="font-size:13px;color:var(--grey)">${HS[i][3]}</span>`; }
+  $("hotspots").addEventListener("click", e => { const n = e.target.closest(".hs"); if (n) hs(+n.dataset.i); });
+  $("hotspots").addEventListener("keydown", e => { const n = e.target.closest(".hs"); if (n && (e.key==="Enter"||e.key===" ")) { e.preventDefault(); hs(+n.dataset.i); } });
+  paint(cur); hs(0);
 })();
 </script>
 </body>
